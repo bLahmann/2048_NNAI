@@ -3,14 +3,15 @@ import java.util.Random;
 
 public class Program {
 
-    private static final int POPULATION_SIZE = 100;
-    private static final double CULLING_FRACTION = 0.5;
-    private static final double MUTATE_CHANCE = 0.1;
-    private static final double MUTATE_FRACTION = 0.2;
+    private static final int POPULATION_SIZE = 10;
+    private static final int GAMES_PER_AI = 128;
+    private static final double CULLING_FRACTION = 0.8;
+    private static final double MUTATE_CHANCE = 1.0;
+    private static final double MUTATE_FRACTION = 0.05;
 
-    private static final int[] HIDDEN_NODE_SIZES = new int[] {32, 32, 32};
+    private static final int[] HIDDEN_NODE_SIZES = new int[] {32, 32};
 
-    public static void main(String ... args){
+    public static void main(String ... args) throws Exception{
 
         Random random = new Random();
 
@@ -26,19 +27,29 @@ public class Program {
         int iteration = 0;
         while (true) {
 
-            // Play the game
-            for (int i = 0; i < ais.length; i++) {
-                Board board = new Board();
-                while (ais[i].doMove(board)) {
-                }
-                scores[i] = (double) board.getMaxTile();
+            // Init the scores
+            for (int i = 0; i < ais.length; i++){
+                scores[i] = 0.0;
             }
+
+            // Play the game
+            SimulationThread[] threads = new SimulationThread[ais.length];
+            for (int i = 0; i < ais.length; i++) {
+                threads[i] = new SimulationThread(ais[i], GAMES_PER_AI);
+                threads[i].start();
+            }
+
+            for (int i = 0; i < ais.length; i++){
+                threads[i].join();
+                scores[i] = threads[i].getScore();
+            }
+
 
             // Sort the results
             ArrayIndexComparator comparator = new ArrayIndexComparator(scores);
             Integer[] indexes = comparator.createIndexArray();
             Arrays.sort(indexes, comparator);
-            System.out.println(iteration + " " + Utils.mean(scores));
+            System.out.println(iteration + " " + Utils.mean(scores) + " " + scores[indexes[0]]);
             iteration++;
 
             // Breed the next generation
@@ -46,9 +57,9 @@ public class Program {
             int counter = 0;
             for (int i = cutOffIndex; i < POPULATION_SIZE; i++) {
                 int partnerIndex = random.nextInt(cutOffIndex - 1);
-                ais[i] = ais[indexes[counter]].breed(ais[indexes[partnerIndex]]);
+                ais[indexes[i]] = ais[indexes[counter]].breed(ais[indexes[partnerIndex]]);
                 if (random.nextDouble() < MUTATE_CHANCE){
-                    ais[i].mutate(MUTATE_FRACTION);
+                    ais[indexes[i]].mutate(MUTATE_FRACTION);
                 }
                 counter = Math.floorMod(counter + 1, cutOffIndex);
             }

@@ -3,7 +3,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-public class AI {
+public class AI{
 
     private NeuralNetwork nn;
 
@@ -19,8 +19,9 @@ public class AI {
         int counter = 0;
         for (int i = 0; i < tiles.length; i++){
             for (int j = 0; j < tiles.length; j++){
-                //inputNodes[counter] = Math.log(tiles[i][j]) / Math.log(2);
-                inputNodes[counter] = (double) tiles[i][j];
+                if (tiles[i][j] == 0)   inputNodes[counter] = 0.0;
+                else    inputNodes[counter] = Math.log(tiles[i][j]) / Math.log(2);
+                //inputNodes[counter] = (double) tiles[i][j];
                 counter++;
             }
         }
@@ -125,4 +126,5 @@ public class AI {
     public NeuralNetwork getNeuralNetwork() {
         return nn;
     }
+
 }
